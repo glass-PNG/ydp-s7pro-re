@@ -1,0 +1,12 @@
+# 本仓库不收录任何厂商二进制、固件或设备备份
+*.img
+*.emmc
+*.bin
+*.deb
+*.cpio
+*.cpio.gz
+*.zip
+tmp/
+__pycache__/
+*.pyc
+logs/
