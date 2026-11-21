@@ -1,0 +1,22 @@
+# 已取得样本的哈希（便于他人比对）
+
+## 设备 boot0 硬件分区（1 MiB，通过 token 0x0c 读出）
+boot0_1MB.bin   1,044,480 B
+sha256  3d408d95db3da24db94691b4e71506642a72db065e32e3f2292fd9b16039c138
+
+## 官方 OTA 全量包
+update_4.23.0.img   18,620,428 B
+md5     7a037fa830c1c2d549ad3a1f2d1d937d
+sha256  2533ee22...（见原始抓包，公开版略）
+
+## 包内载荷
+fip.bin               631,808 B   sha256 73c5991c704be40dc6f9dab92cef0860b71ce6d194d721227cd5c820d0f1e8c1
+boot.emmc           4,753,272 B   kernel crc32 729edb39 / dtb sha256 f174bc1c...
+install.img         6,291,456 B   ext4，含 update_engine (ELF32 ARM)
+rootfs.img          5,595,238 B   HDIFF19&&crc32 容器
+yoc.bin             1,336,864 B   cimgxV4，C-SKY 媒体固件
+
+## 自制产物（公开版仅记录尺寸，不提供二进制）
+initramfs.cpio.gz         893,059 B
+boot_dump.emmc          5,645,676 B
+update_dumpboot.img    19,510,828 B
