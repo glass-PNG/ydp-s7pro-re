@@ -3,6 +3,12 @@
 > 目标：**在不拆机、不用 UART 的前提下，为这台笔做一份完整 flash 备份**，然后再谈定制。
 > 现状：**读回通道仍未打通**，写通道已经被完整验证。欢迎各路朋友一起想办法。
 
+> ### 一句话卡点
+> ROM 下载模式只能读 `boot0`（1 MiB）；`0x83` 组出来的 `mmc read` 在用户区一律返回失败。
+> 没有 UART、不能拆机、也没有救砖通道 —— 所以「先备份再动手」这第一步一直卡着。
+> **求一个能在 ROM 阶段读出 eMMC 用户区的方法，或者一个能进 u-boot `cvi_utask`(3346:1001) 的入口。**
+> 相关 issue：[#1](https://github.com/glass-PNG/ydp-s7pro-re/issues/1) / [#2](https://github.com/glass-PNG/ydp-s7pro-re/issues/2) / [#8](https://github.com/glass-PNG/ydp-s7pro-re/issues/8)
+
 本仓库记录的是对**我自己购买的设备**做的研究：协议帧格式、分区表、OTA 容器、
 boot 镜像结构、以及每一步的真机实测结果（含失败）。所有结论都带地址/偏移/日志证据。
 
@@ -102,7 +108,42 @@ scripts/                     脱敏后的工具脚本
 evidence/checksums.txt       已取得的样本哈希
 ```
 
-## 5. 免责声明
+## 5. 如何参与
+
+不需要有同款设备也能帮上忙 —— 下面这些问题里，有几个是纯软件/格式问题：
+
+| Issue | 问题 | 需要的技能 |
+|---|---|---|
+| [#1](https://github.com/glass-PNG/ydp-s7pro-re/issues/1) | 怎么让 ROM 跳到 RAM 里的 fip，进 u-boot(3346:1001) | ARM64 反汇编 / USB 抓包 |
+| [#2](https://github.com/glass-PNG/ydp-s7pro-re/issues/2) | `0x83` 为什么读不到 eMMC 用户区 | 协议黑盒 / Cvitek 经验 |
+| [#3](https://github.com/glass-PNG/ydp-s7pro-re/issues/3) | u-boot `cvi_utask` 的帧格式 | 有设备者优先 |
+| [#4](https://github.com/glass-PNG/ydp-s7pro-re/issues/4) | `ENV` 分区怎么读/怎么改 | U-Boot 经验（**性价比最高**） |
+| [#5](https://github.com/glass-PNG/ydp-s7pro-re/issues/5) | `HDIFF19&&crc32` 差分容器格式 | 文件格式 / 逆向 |
+| [#6](https://github.com/glass-PNG/ydp-s7pro-re/issues/6) | MTP 能不能写文件 | libmtp / Windows MTP |
+| [#7](https://github.com/glass-PNG/ydp-s7pro-re/issues/7) | 有没有隐藏调试端口 | 端口扫描 |
+| [#8](https://github.com/glass-PNG/ydp-s7pro-re/issues/8) | 有没有不拆机的救砖通道 | 硬件 / bootloader |
+
+如果你在自己的设备上验了某个假设，直接用「设备实测报告」模板开 issue —— **失败的结果同样有价值**，
+我们会把它记进 `docs/05-roadmap.md` 的「已排除路线」表里。
+
+## 6. TL;DR (English)
+
+- **Device**: Youdao Dictionary Pen S7 Pro (`YDPS7-2`, SKU `OVERHEAD_Y08_SKU_CHN_PLUS`),
+  Cvitek **CV1826** — AArch64 BL2/U-Boot + **32-bit ARM** Linux 5.10.4, 29.12 GiB eMMC, **EROFS** root (A/B).
+- **Download mode**: hold the "return" key while plugging USB → `VID:PID 3346:1000` (CDC-ACM, 921600 8N1,
+  DTR/RTS must be low before opening). Release the key and it boots normally.
+- **Protocol recovered from the vendor binary**: two framings in one firmware —
+  **8-byte header** for RAM writes (`0x00`), **16-byte header** for control (`0x81/0x82/0x83/0x0a/0x0c`),
+  CRC-16/XMODEM over the whole packet, 16-byte ACK carrying CRC + token echo + a monotonic counter.
+- **Verified working**: RAM write/read, `boot0` 1 MiB readback at **7.36 MB/s**,
+  full OTA write control (`package-file` decides which partitions get flashed; the device accepts a
+  forged `checkVersion` response and an unmodified 4.23.0 package re-labelled 4.24.0).
+- **Blocked**: no way to read the eMMC user area from ROM (`0x83` `mmc read` fails, `0x0a` then ships a
+  stale buffer), can't reach the u-boot `cvi_utask` (`3346:1001`) download task, and there is
+  **no brick-recovery channel** — which is why the custom-boot + initramfs dump scheme is built but not deployed.
+- **Wanted**: a way to make `mmc read` succeed in the ROM context, or any entry into `3346:1001`.
+
+## 7. 免责声明
 
 本项目仅用于**自己设备**的备份、修复与学习。不要用它去改别人的设备、
 不要用泄露的凭据去请求厂商服务、不要把工具用在你不拥有的硬件上。
