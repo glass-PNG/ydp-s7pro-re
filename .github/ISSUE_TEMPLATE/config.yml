@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 协议细节文档
+    url: https://github.com/glass-PNG/ydp-s7pro-re/blob/main/docs/02-usb-rom-protocol.md
+    about: 帧格式、token 表、会挂死的操作，先看这里
